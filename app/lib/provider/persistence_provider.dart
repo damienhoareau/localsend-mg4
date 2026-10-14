@@ -433,7 +433,8 @@ class PersistenceService {
   }
 
   bool isSaveToGallery() {
-    return _prefs.getBool(_saveToGallery) ?? true;
+    // MG4: the head unit has no gallery, files go to the receive folder.
+    return _prefs.getBool(_saveToGallery) ?? false;
   }
 
   Future<void> setSaveToGallery(bool saveToGallery) async {
@@ -449,7 +450,8 @@ class PersistenceService {
   }
 
   bool getAdvancedSettingsEnabled() {
-    return _prefs.getBool(_advancedSettingsKey) ?? false;
+    // MG4: show the advanced settings (port, interface filters, ...) by default.
+    return _prefs.getBool(_advancedSettingsKey) ?? true;
   }
 
   Future<void> setAdvancedSettingsEnabled(bool isEnabled) async {
@@ -458,7 +460,8 @@ class PersistenceService {
 
   QuickSaveMode getQuickSave() {
     final value = _prefs.getString(_quickSave);
-    return QuickSaveMode.values.firstWhereOrNull((mode) => mode.name == value) ?? QuickSaveMode.paired;
+    // MG4: nobody is there to tap "accept" while driving, so incoming files are accepted automatically by default.
+    return QuickSaveMode.values.firstWhereOrNull((mode) => mode.name == value) ?? QuickSaveMode.on;
   }
 
   Future<void> setQuickSave(QuickSaveMode mode) async {
@@ -478,7 +481,8 @@ class PersistenceService {
   }
 
   bool isAutoFinish() {
-    return _prefs.getBool(_autoFinish) ?? false;
+    // MG4: close the progress page by itself once a transfer is done.
+    return _prefs.getBool(_autoFinish) ?? true;
   }
 
   Future<void> setAutoFinish(bool autoFinish) async {

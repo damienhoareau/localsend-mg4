@@ -92,7 +92,11 @@ class LocalSendApp extends StatelessWidget {
               theme: getTheme(colorMode, customColor, Brightness.light, dynamicColors),
               darkTheme: getTheme(colorMode, customColor, Brightness.dark, dynamicColors),
               themeMode: colorMode == ColorMode.oled ? ThemeMode.dark : themeMode,
-              builder: (context, child) => WindowBrightnessWatcher(child: child!),
+              // MG4: the head unit is viewed from a distance, so enlarge the text a bit.
+              builder: (context, child) => MediaQuery(
+                data: MediaQuery.of(context).copyWith(textScaler: const TextScaler.linear(1.25)),
+                child: WindowBrightnessWatcher(child: child!),
+              ),
               navigatorKey: context.read(navigationProvider).key,
               home: RouterinoHome(
                 builder: () => const HomePage(

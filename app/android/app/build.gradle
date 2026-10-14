@@ -42,6 +42,8 @@ android {
 
     defaultConfig {
         applicationId "org.localsend.localsend_app"
+        // MG4: installs next to the stock LocalSend instead of replacing it.
+        applicationIdSuffix ".mg4"
         // You can update the following values to match your application needs.
         // For more information, see: https://docs.flutter.dev/deployment/android#reviewing-the-build-configuration.
         minSdkVersion flutter.minSdkVersion
@@ -67,7 +69,8 @@ android {
 
     buildTypes {
         release {
-            signingConfig signingConfigs.release
+            // MG4: without a key.properties file, sign with the debug key so `flutter build apk` still produces an installable APK.
+            signingConfig rootProject.file('key.properties').exists() ? signingConfigs.release : signingConfigs.debug
         }
         debug {
             applicationIdSuffix ".debug"

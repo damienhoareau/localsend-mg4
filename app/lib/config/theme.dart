@@ -52,8 +52,9 @@ ThemeData getTheme(ColorMode colorMode, Color customColor, Brightness brightness
   return ThemeData(
     colorScheme: colorScheme,
     useMaterial3: true,
-    // same density on all platforms so desktop matches mobile (defaults to compact on desktop)
-    visualDensity: VisualDensity.standard,
+    // MG4: roomier touch targets for a car touchscreen (default would be VisualDensity.standard)
+    visualDensity: VisualDensity.comfortable,
+    materialTapTargetSize: MaterialTapTargetSize.padded,
     navigationBarTheme: colorScheme.brightness == Brightness.dark
         ? NavigationBarThemeData(
             iconTheme: WidgetStateProperty.all(const IconThemeData(color: Colors.white)),
@@ -179,8 +180,9 @@ ThemeData _getYaruTheme(Brightness brightness) {
   InputDecorationThemeData;
 
   return baseTheme.copyWith(
-    // same density on all platforms so desktop matches mobile (defaults to compact on desktop)
-    visualDensity: VisualDensity.standard,
+    // MG4: roomier touch targets for a car touchscreen (default would be VisualDensity.standard)
+    visualDensity: VisualDensity.comfortable,
+    materialTapTargetSize: MaterialTapTargetSize.padded,
     navigationBarTheme: colorScheme.brightness == Brightness.dark
         ? NavigationBarThemeData(
             iconTheme: WidgetStateProperty.all(const IconThemeData(color: Colors.white)),
