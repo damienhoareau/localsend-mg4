@@ -67,13 +67,29 @@ jobs:
         run: flutter pub get
 
       - name: Build APK
+        id: build
         working-directory: app
         env:
           UI_SCALE: ${{ inputs.ui_scale }}
         run: |
+          set -o pipefail
           EXTRA=""
           if [ -n "$UI_SCALE" ]; then EXTRA="--dart-define=UI_SCALE=$UI_SCALE"; fi
-          flutter build apk --release --split-per-abi $EXTRA
+          flutter build apk --release --split-per-abi $EXTRA 2>&1 | tee "$RUNNER_TEMP/build.log"
+
+      # Puts the compiler errors in the run's annotations (visible on the run summary page).
+      - name: Show build errors
+        if: failure() && steps.build.outcome == 'failure'
+        run: |
+          python3 - "$RUNNER_TEMP/build.log" <<'PY'
+          import sys
+          lines = open(sys.argv[1], errors="replace").read().splitlines()
+          errs = [l for l in lines if "rror" in l or "FAILED" in l or "FAILURE" in l or "What went wrong" in l or "warning:" in l.lower()]
+          def esc(s):
+              return s.replace("%", "%25").replace("\r", "%0D").replace("\n", "%0A")
+          print("::error title=Build errors::" + esc("\n".join(errs[:60])))
+          print("::error title=Build log tail::" + esc("\n".join(lines[-60:])))
+          PY
 
       - name: Upload APKs
         uses: actions/upload-artifact@v6
