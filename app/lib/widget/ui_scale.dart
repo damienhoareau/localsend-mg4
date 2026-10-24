@@ -5,23 +5,26 @@ import 'package:flutter/widgets.dart';
 ///
 /// Note: the layout switches to the phone layout below 700 logical pixels of width (see `SizingInformation`),
 /// so very large factors change the layout, not only the size.
-const double mg4UiScale = double.fromEnvironment('UI_SCALE', defaultValue: 1.6);
+/// (Dart only has `fromEnvironment` for String, int and bool, hence the parsing.)
+final double mg4UiScale = double.tryParse(const String.fromEnvironment('UI_SCALE', defaultValue: '1.6')) ?? 1.6;
 
 /// Renders [child] as if the screen were [scale] times smaller, then magnifies the result by [scale].
 /// Touches are mapped back through the same transform, and the [MediaQuery] is adjusted so that
 /// responsive widgets, dialogs and menus see the reduced logical size.
 class UiScale extends StatelessWidget {
-  final double scale;
+  /// Magnification factor, [mg4UiScale] when null.
+  final double? factor;
   final Widget child;
 
   const UiScale({
     required this.child,
-    this.scale = mg4UiScale,
+    this.factor,
     super.key,
   });
 
   @override
   Widget build(BuildContext context) {
+    final scale = factor ?? mg4UiScale;
     if (scale == 1.0) {
       return child;
     }
