@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 /// Note: the layout switches to the phone layout below 700 logical pixels of width (see `SizingInformation`),
 /// so very large factors change the layout, not only the size.
 /// (Dart only has `fromEnvironment` for String, int and bool, hence the parsing.)
-final double mg4UiScale = double.tryParse(const String.fromEnvironment('UI_SCALE', defaultValue: '1.6')) ?? 1.6;
+final double mg4UiScale = double.tryParse(const String.fromEnvironment('UI_SCALE', defaultValue: '2.0')) ?? 2.0;
 
 /// Renders [child] as if the screen were [scale] times smaller, then magnifies the result by [scale].
 /// Touches are mapped back through the same transform, and the [MediaQuery] is adjusted so that

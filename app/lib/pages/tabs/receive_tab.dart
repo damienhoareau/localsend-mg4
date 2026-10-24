@@ -57,9 +57,19 @@ class _ReceiveTabState extends State<ReceiveTab> {
     final serverState = context.watch(serverProvider);
     final localIps = context.watch(localIpProvider.select((s) => s.localIps));
 
+    // MG4: on a short display (the UI is magnified, see UiScale) the name must stay visible without scrolling.
+    final compact = MediaQuery.sizeOf(context).height < 460;
+
     return Stack(
       children: [
-        Center(
+        if (compact)
+          _CompactReceive(
+            alias: serverState?.alias ?? alias,
+            serverState: serverState,
+            localIps: localIps,
+          )
+        else
+          Center(
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: ResponsiveListView.defaultMaxWidth),
             child: Padding(
@@ -131,6 +141,74 @@ class _ReceiveTabState extends State<ReceiveTab> {
           toggleAdvanced: _toggleAdvanced,
         ),
       ],
+    );
+  }
+}
+
+/// MG4: receive screen for short displays: the logo sits next to the device name instead of above it.
+class _CompactReceive extends StatelessWidget {
+  final String alias;
+  final ServerState? serverState;
+  final List<String> localIps;
+
+  const _CompactReceive({
+    required this.alias,
+    required this.serverState,
+    required this.localIps,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 10),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Consumer(
+              builder: (context, ref) {
+                final animations = ref.watch(animationProvider);
+                final activeTab = ref.watch(homePageControllerProvider.select((state) => state.currentTab));
+                return RotatingWidget(
+                  duration: const Duration(seconds: 15),
+                  spinning: serverState != null && animations && activeTab == HomeTab.receive,
+                  child: const SizedBox(
+                    width: 140,
+                    height: 140,
+                    child: FittedBox(child: LocalSendLogo(withText: false)),
+                  ),
+                );
+              },
+            ),
+            const SizedBox(width: 30),
+            Flexible(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(alias, style: const TextStyle(fontSize: 40)),
+                  ),
+                  Text(
+                    serverState == null ? t.general.offline : localIps.map((ip) => '#${ip.visualId}').toSet().join(' '),
+                    style: const TextStyle(fontSize: 20),
+                  ),
+                  const SizedBox(height: 12),
+                  OutlinedButton.icon(
+                    onPressed: () async {
+                      await context.global.dispatchAsync(NavigateAction.push(const WebSharePage()));
+                    },
+                    icon: const Icon(Icons.language),
+                    label: Text(t.receiveTab.link),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

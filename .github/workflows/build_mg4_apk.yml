@@ -20,7 +20,7 @@ on:
         default: '1744x640'
       screen_density:
         description: 'Emulated screen density (dpi)'
-        default: '240'
+        default: '160'
 
 env:
   FLUTTER_VERSION: "3.41.9"
@@ -143,7 +143,7 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         env:
           SCREEN_SIZE: ${{ inputs.screen_size || '1744x640' }}
-          SCREEN_DENSITY: ${{ inputs.screen_density || '240' }}
+          SCREEN_DENSITY: ${{ inputs.screen_density || '160' }}
         with:
           api-level: 28
           arch: x86_64

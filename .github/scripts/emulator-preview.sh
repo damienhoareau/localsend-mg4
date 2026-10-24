@@ -70,7 +70,7 @@ open_tab() {
 # Area LocalSend gets on the head unit (about 90% of the 1920x720 panel, estimated from photos).
 # Hide the emulator's own status/navigation bars: the head unit has none in that area.
 adb shell wm size "${SCREEN_SIZE:-1744x640}"
-adb shell wm density "${SCREEN_DENSITY:-240}"
+adb shell wm density "${SCREEN_DENSITY:-160}"
 adb shell settings put global policy_control "immersive.full=*" || true
 
 adb install -r "$APK" || { echo "install failed" | tee -a "$NOTES"; exit 1; }
@@ -85,6 +85,19 @@ dump_ui "$OUT/ui-01-receive.xml" || echo "01-receive: ui dump failed" >> "$NOTES
 
 open_tab 'Send|Envoyer' 02-send || true
 open_tab 'Settings|Paramètres' 03-settings || true
+
+# The emulator screenshot is the full 1080x1920 panel with the (smaller) overridden display letterboxed
+# in black: crop it so the pictures only show the app area. Best effort, the originals stay if it fails.
+python3 -m pip install --quiet pillow >/dev/null 2>&1 || true
+python3 - "$OUT" <<'PY' || echo "crop skipped" >> "$NOTES"
+import glob, sys
+from PIL import Image, ImageChops
+for path in sorted(glob.glob(sys.argv[1] + "/0[0-9]-*.png")):
+    img = Image.open(path).convert("RGB")
+    bbox = ImageChops.difference(img, Image.new("RGB", img.size, (0, 0, 0))).getbbox()
+    if bbox:
+        img.crop(bbox).save(path)
+PY
 
 adb logcat -d -t 4000 > "$OUT/logcat.txt" || true
 { adb shell wm size; adb shell wm density; adb shell getprop ro.build.version.release; } > "$OUT/screen.txt"
