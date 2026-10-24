@@ -52,8 +52,8 @@ ThemeData getTheme(ColorMode colorMode, Color customColor, Brightness brightness
   return ThemeData(
     colorScheme: colorScheme,
     useMaterial3: true,
-    // MG4: roomier touch targets for a car touchscreen (default would be VisualDensity.standard)
-    visualDensity: VisualDensity.comfortable,
+    // MG4: padded tap targets for a car touchscreen (the overall size comes from UiScale in main.dart)
+    visualDensity: VisualDensity.standard,
     materialTapTargetSize: MaterialTapTargetSize.padded,
     navigationBarTheme: colorScheme.brightness == Brightness.dark
         ? NavigationBarThemeData(
@@ -180,8 +180,8 @@ ThemeData _getYaruTheme(Brightness brightness) {
   InputDecorationThemeData;
 
   return baseTheme.copyWith(
-    // MG4: roomier touch targets for a car touchscreen (default would be VisualDensity.standard)
-    visualDensity: VisualDensity.comfortable,
+    // MG4: padded tap targets for a car touchscreen (the overall size comes from UiScale in main.dart)
+    visualDensity: VisualDensity.standard,
     materialTapTargetSize: MaterialTapTargetSize.padded,
     navigationBarTheme: colorScheme.brightness == Brightness.dark
         ? NavigationBarThemeData(

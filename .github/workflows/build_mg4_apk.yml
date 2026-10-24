@@ -1,6 +1,9 @@
 name: Build MG4 APK
 
-# Builds the MG4 fork of LocalSend and publishes the APKs as a workflow artifact.
+# 1. Builds the MG4 fork of LocalSend (one APK per CPU architecture) and publishes them as an artifact.
+# 2. Runs the x86_64 APK in an Android 9 emulator at head-unit-like resolution and publishes
+#    screenshots (workflow artifact "car-ui-preview" + branch "preview-shots").
+#
 # No secrets needed: without key.properties the release APK is signed with the debug key
 # (see app/android/app/build.gradle).
 
@@ -8,13 +11,31 @@ on:
   push:
     branches: [mg4]
   workflow_dispatch:
+    inputs:
+      ui_scale:
+        description: 'UI magnification factor (empty = value of mg4UiScale in app/lib/widget/ui_scale.dart)'
+        default: ''
+      screen_size:
+        description: 'Emulated screen size (WxH): the area the app gets on the head unit'
+        default: '1744x640'
+      screen_density:
+        description: 'Emulated screen density (dpi)'
+        default: '240'
 
 env:
   FLUTTER_VERSION: "3.41.9"
 
+permissions:
+  contents: read
+
+concurrency:
+  group: build-mg4-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build_apk:
     runs-on: ubuntu-22.04
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -47,7 +68,12 @@ jobs:
 
       - name: Build APK
         working-directory: app
-        run: flutter build apk --release --split-per-abi
+        env:
+          UI_SCALE: ${{ inputs.ui_scale }}
+        run: |
+          EXTRA=""
+          if [ -n "$UI_SCALE" ]; then EXTRA="--dart-define=UI_SCALE=$UI_SCALE"; fi
+          flutter build apk --release --split-per-abi $EXTRA
 
       - name: Upload APKs
         uses: actions/upload-artifact@v6
@@ -57,3 +83,79 @@ jobs:
             app/build/app/outputs/flutter-apk/app-armeabi-v7a-release.apk
             app/build/app/outputs/flutter-apk/app-arm64-v8a-release.apk
             app/build/app/outputs/flutter-apk/app-x86_64-release.apk
+          if-no-files-found: error
+
+  emulator_preview:
+    needs: build_apk
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: write # needed to publish screenshots to the preview-shots branch
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Download APKs
+        uses: actions/download-artifact@v6
+        with:
+          name: localsend-mg4-apk
+          path: apk
+
+      # The app must never start by itself when the car boots: fail if our own boot receiver is back.
+      # (flutter_foreground_task ships an inert RebootReceiver, listed here for information only.)
+      - name: Check the manifest for boot receivers
+        run: |
+          mkdir -p preview-out
+          AAPT2="$(ls -d "$ANDROID_HOME"/build-tools/*/aapt2 | sort -V | tail -1)"
+          "$AAPT2" dump xmltree --file AndroidManifest.xml apk/app-x86_64-release.apk > preview-out/manifest.txt
+          echo "--- boot-related manifest entries ---"
+          grep -n -i "BOOT_COMPLETED\|QUICKBOOT\|BootReceiver\|SYSTEM_ALERT_WINDOW" preview-out/manifest.txt | tee preview-out/manifest-boot.txt || true
+          if grep -q -E '[^e]BootReceiver' preview-out/manifest.txt; then
+            echo "::error::A boot receiver that launches the app is declared in the manifest"
+            exit 1
+          fi
+          echo "No app-launching boot receiver in the manifest."
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run in emulator and take screenshots
+        uses: reactivecircus/android-emulator-runner@v2
+        env:
+          SCREEN_SIZE: ${{ inputs.screen_size || '1744x640' }}
+          SCREEN_DENSITY: ${{ inputs.screen_density || '240' }}
+        with:
+          api-level: 28
+          arch: x86_64
+          target: default
+          profile: pixel_2
+          ram-size: 4096M
+          disable-animations: true
+          emulator-options: -no-window -no-snapshot -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: bash .github/scripts/emulator-preview.sh apk/app-x86_64-release.apk preview-out
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: car-ui-preview
+          path: preview-out/
+          retention-days: 14
+          if-no-files-found: warn
+
+      - name: Publish screenshots to branch preview-shots
+        if: always()
+        run: |
+          set -e
+          d="$(mktemp -d)"
+          cp -r preview-out/. "$d/"
+          cd "$d"
+          git init -q
+          git checkout -q -b preview-shots
+          git add -A
+          git -c user.name=github-actions -c user.email=actions@github.com commit -q -m "Preview screenshots for ${GITHUB_SHA::7}"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}" preview-shots
