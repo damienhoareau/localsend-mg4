@@ -1,0 +1,4 @@
+53:        A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.permission.RECEIVE_BOOT_COMPLETED" (Raw: "android.permission.RECEIVE_BOOT_COMPLETED")
+124:            A: http://schemas.android.com/apk/res/android:name(0x01010003)="com.pravera.flutter_foreground_task.service.RebootReceiver" (Raw: "com.pravera.flutter_foreground_task.service.RebootReceiver")
+129:                    A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.intent.action.BOOT_COMPLETED" (Raw: "android.intent.action.BOOT_COMPLETED")
+133:                    A: http://schemas.android.com/apk/res/android:name(0x01010003)="android.intent.action.QUICKBOOT_POWERON" (Raw: "android.intent.action.QUICKBOOT_POWERON")

@@ -1,0 +1,3 @@
+02-send: tapped 'Send|Envoyer' at 256 336
+03-settings: tapped 'Settings|Paramètres' at 256 424
+done
